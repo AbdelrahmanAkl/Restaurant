@@ -1,4 +1,4 @@
-import {
+﻿import {
   BrowserRouter,
   Navigate,
   Route,
@@ -12,6 +12,7 @@ import BranchesPage from "../features/branches/pages/BranchesPage";
 import AdminLayout from "../components/layout/AdminLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import TablesPage from "../features/tables/pages/TablesPage";
+import UsersPage from "../features/users/pages/UsersPage";
 
 export default function AppRoutes() {
   return (
@@ -46,10 +47,7 @@ export default function AppRoutes() {
             />
 
             {/* Users */}
-            <Route
-              path="/users"
-              element={<div>Users</div>}
-            />
+            <Route             path="/users"            element={<UsersPage />}         />
 
             {/* Menu */}
             <Route

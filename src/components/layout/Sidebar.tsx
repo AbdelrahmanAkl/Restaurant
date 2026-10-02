@@ -23,6 +23,8 @@ import {
 
 import { NavLink } from "react-router-dom";
 
+import { authService } from "../../services/authService";
+
 const workspaceItems = [
   {
     label: "Dashboard",
@@ -43,6 +45,7 @@ const workspaceItems = [
     label: "Users & Roles",
     path: "/users",
     icon: <GroupsOutlined />,
+    permission: "users",
   },
 ];
 
@@ -86,6 +89,7 @@ interface MenuItem {
   label: string;
   path: string;
   icon: React.ReactNode;
+  permission?: string;
 }
 
 function MenuSection({
@@ -139,7 +143,8 @@ function MenuSection({
 
               "&.active": {
                 color: "primary.main",
-                backgroundColor: "rgba(99, 91, 255, 0.10)",
+                backgroundColor:
+                  "rgba(99, 91, 255, 0.10)",
               },
 
               "&.active .MuiListItemText-primary": {
@@ -158,8 +163,10 @@ function MenuSection({
                 top: 8,
                 bottom: 8,
                 width: 3,
-                borderRadius: "0 4px 4px 0",
-                backgroundColor: "primary.main",
+                borderRadius:
+                  "0 4px 4px 0",
+                backgroundColor:
+                  "primary.main",
               },
 
               "&:hover": {
@@ -167,7 +174,8 @@ function MenuSection({
               },
 
               "&.active:hover": {
-                backgroundColor: "rgba(99, 91, 255, 0.14)",
+                backgroundColor:
+                  "rgba(99, 91, 255, 0.14)",
               },
             }}
           >
@@ -186,6 +194,23 @@ function MenuSection({
 }
 
 export default function Sidebar() {
+  const user = authService.getUser();
+
+  const canAccessUsers =
+    user?.role === "SuperAdmin" ||
+    user?.role === "Admin" ||
+    user?.role === "RestaurantManager" ||
+    user?.role === "BranchManager";
+
+  const visibleWorkspaceItems =
+    workspaceItems.filter((item) => {
+      if (item.permission === "users") {
+        return canAccessUsers;
+      }
+
+      return true;
+    });
+
   return (
     <Box
       component="aside"
@@ -261,7 +286,7 @@ export default function Sidebar() {
       >
         <MenuSection
           title="Workspace"
-          items={workspaceItems}
+          items={visibleWorkspaceItems}
         />
 
         <MenuSection
