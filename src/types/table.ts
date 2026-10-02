@@ -10,12 +10,10 @@ export interface Table {
 export interface CreateTableRequest {
   branchId: number;
   tableNumber: string;
-  qrCode?: string | null;
   isActive: boolean;
 }
 
 export interface UpdateTableRequest {
   tableNumber: string;
-  qrCode?: string | null;
   isActive: boolean;
 }

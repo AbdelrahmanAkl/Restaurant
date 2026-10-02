@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   AddOutlined,
   DeleteOutlined,
+  DownloadOutlined,
   EditOutlined,
   QrCode2Outlined,
   TableRestaurantOutlined,
@@ -27,6 +28,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useLocation } from "react-router-dom";
+import { QRCodeCanvas } from "qrcode.react";
 
 import { branchService } from "../../../services/branchService";
 import { tableService } from "../../../services/tableService";
@@ -41,14 +43,12 @@ import type {
 interface TableForm {
   branchId: number | "";
   tableNumber: string;
-  qrCode: string;
   isActive: boolean;
 }
 
 const emptyForm: TableForm = {
   branchId: "",
   tableNumber: "",
-  qrCode: "",
   isActive: true,
 };
 
@@ -65,6 +65,7 @@ export default function TablesPage() {
   const [formError, setFormError] = useState("");
 
   const [dialogOpen, setDialogOpen] = useState(false);
+
   const [editingTable, setEditingTable] =
     useState<Table | null>(null);
 
@@ -85,10 +86,15 @@ export default function TablesPage() {
       setTables(tableData);
       setBranches(branchData);
     } catch (err: any) {
-      console.error("Tables loading failed:", err);
+      console.error(
+        "Tables loading failed:",
+        err
+      );
 
       setError(
         err?.response?.data?.message ||
+          err?.response?.data?.title ||
+          err?.message ||
           "Unable to load tables."
       );
     } finally {
@@ -97,27 +103,28 @@ export default function TablesPage() {
   };
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, []);
 
   useEffect(() => {
     const state = location.state as
       | {
           branchId?: number;
-          branchName?: string;
         }
       | null;
 
     if (
       state?.branchId &&
-      branches.length > 0
+      branches.some(
+        (branch) =>
+          branch.id === state.branchId
+      )
     ) {
       setEditingTable(null);
 
       setForm({
         branchId: state.branchId,
         tableNumber: "",
-        qrCode: "",
         isActive: true,
       });
 
@@ -126,20 +133,28 @@ export default function TablesPage() {
 
       window.history.replaceState(
         {},
-        document.title
+        document.title,
+        window.location.pathname
       );
     }
   }, [location.state, branches]);
 
   const openCreate = () => {
+    const activeBranches =
+      branches.filter(
+        (branch) => branch.isActive
+      );
+
     setEditingTable(null);
+
     setForm({
       ...emptyForm,
       branchId:
-        branches.length === 1
-          ? branches[0].id
+        activeBranches.length === 1
+          ? activeBranches[0].id
           : "",
     });
+
     setFormError("");
     setDialogOpen(true);
   };
@@ -150,7 +165,6 @@ export default function TablesPage() {
     setForm({
       branchId: table.branchId,
       tableNumber: table.tableNumber,
-      qrCode: table.qrCode ?? "",
       isActive: table.isActive,
     });
 
@@ -159,17 +173,26 @@ export default function TablesPage() {
   };
 
   const closeDialog = () => {
-    if (!saving) {
-      setDialogOpen(false);
+    if (saving) {
+      return;
     }
+
+    setDialogOpen(false);
+    setEditingTable(null);
+    setForm(emptyForm);
+    setFormError("");
   };
 
   const handleSave = async () => {
+    setFormError("");
+
     const tableNumber =
       form.tableNumber.trim();
 
     if (!form.branchId) {
-      setFormError("Please select a branch.");
+      setFormError(
+        "Please select a branch."
+      );
       return;
     }
 
@@ -182,13 +205,10 @@ export default function TablesPage() {
 
     try {
       setSaving(true);
-      setFormError("");
 
       if (editingTable) {
         const request: UpdateTableRequest = {
           tableNumber,
-          qrCode:
-            form.qrCode.trim() || null,
           isActive: form.isActive,
         };
 
@@ -200,22 +220,29 @@ export default function TablesPage() {
         const request: CreateTableRequest = {
           branchId: Number(form.branchId),
           tableNumber,
-          qrCode:
-            form.qrCode.trim() || null,
           isActive: form.isActive,
         };
 
-        await tableService.createTable(request);
+        await tableService.createTable(
+          request
+        );
       }
 
       setDialogOpen(false);
+      setEditingTable(null);
+      setForm(emptyForm);
 
       await loadData();
     } catch (err: any) {
-      console.error("Table save failed:", err);
+      console.error(
+        "Table save failed:",
+        err
+      );
 
       setFormError(
         err?.response?.data?.message ||
+          err?.response?.data?.title ||
+          err?.message ||
           "Unable to save the table."
       );
     } finally {
@@ -243,26 +270,52 @@ export default function TablesPage() {
 
       await loadData();
     } catch (err: any) {
-      console.error("Table delete failed:", err);
+      console.error(
+        "Table delete failed:",
+        err
+      );
 
       setError(
         err?.response?.data?.message ||
+          err?.response?.data?.title ||
+          err?.message ||
           "Unable to delete the table."
       );
     }
   };
 
-  const getBranchName = (
-    branchId: number
+  const getQrValue = (
+    table: Table
   ) => {
-    const branch = branches.find(
-      (item) => item.id === branchId
-    );
+    if (table.qrCode) {
+      return table.qrCode;
+    }
 
-    return (
-      branch?.name ||
-      "Unknown Branch"
-    );
+    return `MENUORDERING|TABLE:${table.id}|BRANCH:${table.branchId}`;
+  };
+
+  const downloadQr = (
+    table: Table
+  ) => {
+    const canvas =
+      document.getElementById(
+        `qr-${table.id}`
+      ) as HTMLCanvasElement | null;
+
+    if (!canvas) {
+      return;
+    }
+
+    const link =
+      document.createElement("a");
+
+    link.download =
+      `table-${table.tableNumber}-qr.png`;
+
+    link.href =
+      canvas.toDataURL("image/png");
+
+    link.click();
   };
 
   if (loading) {
@@ -310,15 +363,23 @@ export default function TablesPage() {
             color="text.secondary"
             sx={{ mt: 0.5 }}
           >
-            Manage restaurant tables and their QR codes.
+            Manage restaurant tables
+            and generate QR codes.
           </Typography>
         </Box>
 
         <Button
           variant="contained"
-          startIcon={<AddOutlined />}
+          startIcon={
+            <AddOutlined />
+          }
           onClick={openCreate}
-          disabled={branches.length === 0}
+          disabled={
+            branches.filter(
+              (branch) =>
+                branch.isActive
+            ).length === 0
+          }
         >
           Add Table
         </Button>
@@ -328,6 +389,7 @@ export default function TablesPage() {
         <Alert
           severity="error"
           sx={{ mb: 3 }}
+          onClose={() => setError("")}
         >
           {error}
         </Alert>
@@ -358,15 +420,19 @@ export default function TablesPage() {
 
             <Typography
               variant="h6"
-              sx={{ fontWeight: 800 }}
+              sx={{
+                fontWeight: 800,
+              }}
             >
               No branches available
             </Typography>
 
             <Typography
               color="text.secondary"
+              sx={{ mt: 1 }}
             >
-              Create a branch before adding tables.
+              Create a branch before
+              adding tables.
             </Typography>
           </CardContent>
         </Card>
@@ -395,21 +461,25 @@ export default function TablesPage() {
 
             <Typography
               variant="h6"
-              sx={{ fontWeight: 800 }}
+              sx={{
+                fontWeight: 800,
+              }}
             >
               No tables yet
             </Typography>
 
             <Typography
               color="text.secondary"
-              sx={{ mb: 2 }}
+              sx={{ mb: 2, mt: 1 }}
             >
-              Add your first restaurant table.
+              Add your first table.
             </Typography>
 
             <Button
               variant="contained"
-              startIcon={<AddOutlined />}
+              startIcon={
+                <AddOutlined />
+              }
               onClick={openCreate}
             >
               Add Table
@@ -417,159 +487,184 @@ export default function TablesPage() {
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={2.5}>
-          {tables.map((table) => (
-            <Grid
-              key={table.id}
-              size={{
-                xs: 12,
-                md: 6,
-                lg: 4,
-              }}
-            >
-              <Card
-                elevation={0}
-                sx={{
-                  height: "100%",
-                  border: 1,
-                  borderColor: "divider",
-                  borderRadius: 3,
+        <Grid
+          container
+          spacing={2.5}
+        >
+          {tables.map((table) => {
+            const qrValue =
+              getQrValue(table);
+
+            return (
+              <Grid
+                key={table.id}
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  lg: 4,
                 }}
               >
-                <CardContent sx={{ p: 2.5 }}>
-                  <Stack
-                    direction="row"
-                    sx={{
-                      alignItems: "flex-start",
-                      justifyContent:
-                        "space-between",
-                    }}
+                <Card
+                  elevation={0}
+                  sx={{
+                    height: "100%",
+                    border: 1,
+                    borderColor:
+                      "divider",
+                    borderRadius: 3,
+                  }}
+                >
+                  <CardContent
+                    sx={{ p: 2.5 }}
                   >
-                    <Box
+                    <Stack
+                      direction="row"
                       sx={{
-                        width: 46,
-                        height: 46,
-                        borderRadius: 2,
-                        display: "grid",
-                        placeItems: "center",
-                        backgroundColor:
-                          "rgba(99,91,255,0.10)",
-                        color:
-                          "primary.main",
+                        alignItems:
+                          "flex-start",
+                        justifyContent:
+                          "space-between",
                       }}
                     >
-                      <TableRestaurantOutlined />
-                    </Box>
+                      <Box
+                        sx={{
+                          width: 46,
+                          height: 46,
+                          borderRadius: 2,
+                          display: "grid",
+                          placeItems:
+                            "center",
+                          backgroundColor:
+                            "rgba(99,91,255,0.10)",
+                          color:
+                            "primary.main",
+                        }}
+                      >
+                        <TableRestaurantOutlined />
+                      </Box>
+
+                      <Stack
+                        direction="row"
+                        spacing={0.5}
+                      >
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            openEdit(
+                              table
+                            )
+                          }
+                        >
+                          <EditOutlined fontSize="small" />
+                        </IconButton>
+
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() =>
+                            void handleDelete(
+                              table
+                            )
+                          }
+                        >
+                          <DeleteOutlined fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    </Stack>
+
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        mt: 2,
+                        fontWeight: 800,
+                      }}
+                    >
+                      Table{" "}
+                      {table.tableNumber}
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 0.5 }}
+                    >
+                      {table.branchName}
+                    </Typography>
 
                     <Stack
                       direction="row"
-                      spacing={0.5}
+                      spacing={1}
+                      sx={{ mt: 1.5 }}
                     >
-                      <IconButton
+                      <Chip
                         size="small"
-                        onClick={() =>
-                          openEdit(table)
+                        label={
+                          table.isActive
+                            ? "Active"
+                            : "Inactive"
                         }
-                      >
-                        <EditOutlined fontSize="small" />
-                      </IconButton>
-
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() =>
-                          handleDelete(table)
+                        color={
+                          table.isActive
+                            ? "success"
+                            : "default"
                         }
-                      >
-                        <DeleteOutlined fontSize="small" />
-                      </IconButton>
-                    </Stack>
-                  </Stack>
+                      />
 
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      mt: 2,
-                      fontWeight: 800,
-                    }}
-                  >
-                    Table {table.tableNumber}
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 0.5 }}
-                  >
-                    {table.branchName ||
-                      getBranchName(
-                        table.branchId
-                      )}
-                  </Typography>
-
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{ mt: 1.5 }}
-                  >
-                    <Chip
-                      size="small"
-                      label={
-                        table.isActive
-                          ? "Active"
-                          : "Inactive"
-                      }
-                      color={
-                        table.isActive
-                          ? "success"
-                          : "default"
-                      }
-                    />
-
-                    {table.qrCode && (
                       <Chip
                         size="small"
                         icon={
                           <QrCode2Outlined />
                         }
                         label="QR Ready"
+                        color="primary"
                         variant="outlined"
                       />
-                    )}
-                  </Stack>
+                    </Stack>
 
-                  <Box
-                    sx={{
-                      mt: 2,
-                      pt: 2,
-                      borderTop: 1,
-                      borderColor:
-                        "divider",
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                    >
-                      QR Code
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
+                    <Box
                       sx={{
-                        mt: 0.5,
-                        wordBreak:
-                          "break-all",
+                        mt: 2,
+                        pt: 2,
+                        borderTop: 1,
+                        borderColor:
+                          "divider",
+                        display: "flex",
+                        flexDirection:
+                          "column",
+                        alignItems:
+                          "center",
                       }}
                     >
-                      {table.qrCode ||
-                        "No QR code assigned"}
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                      <QRCodeCanvas
+                        id={`qr-${table.id}`}
+                        value={qrValue}
+                        size={180}
+                        level="H"
+                        includeMargin
+                      />
+
+
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={
+                          <DownloadOutlined />
+                        }
+                        onClick={() =>
+                          downloadQr(
+                            table
+                          )
+                        }
+                        sx={{ mt: 1.5 }}
+                      >
+                        Download QR
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
 
@@ -605,20 +700,25 @@ export default function TablesPage() {
               select
               label="Branch"
               value={form.branchId}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  branchId:
-                    event.target.value
-                      ? Number(
-                          event.target.value
-                        )
-                      : "",
-                }))
-              }
+              onChange={(event) => {
+                const value =
+                  event.target.value;
+
+                setForm(
+                  (current) => ({
+                    ...current,
+                    branchId:
+                      value === ""
+                        ? ""
+                        : Number(value),
+                  })
+                );
+              }}
               fullWidth
               disabled={
-                !!editingTable
+                Boolean(
+                  editingTable
+                )
               }
             >
               {branches.map(
@@ -637,34 +737,33 @@ export default function TablesPage() {
             </TextField>
 
             <TextField
-              label="Table number"
+              label="Table Number"
               placeholder="T01"
               value={form.tableNumber}
               onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  tableNumber:
-                    event.target.value,
-                }))
+                setForm(
+                  (current) => ({
+                    ...current,
+                    tableNumber:
+                      event.target
+                        .value,
+                  })
+                )
               }
               required
               fullWidth
-              autoFocus
             />
 
-            <TextField
-              label="QR Code"
-              placeholder="https://..."
-              value={form.qrCode}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  qrCode:
-                    event.target.value,
-                }))
+            <Alert
+              severity="info"
+              icon={
+                <QrCode2Outlined />
               }
-              fullWidth
-            />
+            >
+              QR code will be generated
+              automatically after the
+              table is created.
+            </Alert>
 
             <Stack
               direction="row"
@@ -676,7 +775,9 @@ export default function TablesPage() {
             >
               <Box>
                 <Typography
-                  sx={{ fontWeight: 700 }}
+                  sx={{
+                    fontWeight: 700,
+                  }}
                 >
                   Active table
                 </Typography>
@@ -684,19 +785,26 @@ export default function TablesPage() {
                 <Typography
                   variant="body2"
                   color="text.secondary"
+                  sx={{ mt: 0.5 }}
                 >
-                  Allow customers to use this table.
+                  Allow customers to use
+                  this table.
                 </Typography>
               </Box>
 
               <Switch
-                checked={form.isActive}
+                checked={
+                  form.isActive
+                }
                 onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    isActive:
-                      event.target.checked,
-                  }))
+                  setForm(
+                    (current) => ({
+                      ...current,
+                      isActive:
+                        event.target
+                          .checked,
+                    })
+                  )
                 }
               />
             </Stack>
@@ -718,7 +826,9 @@ export default function TablesPage() {
 
           <Button
             variant="contained"
-            onClick={handleSave}
+            onClick={() =>
+              void handleSave()
+            }
             disabled={saving}
             startIcon={
               saving ? (
@@ -730,7 +840,9 @@ export default function TablesPage() {
           >
             {saving
               ? "Saving..."
-              : "Save"}
+              : editingTable
+                ? "Save Changes"
+                : "Create Table"}
           </Button>
         </DialogActions>
       </Dialog>
