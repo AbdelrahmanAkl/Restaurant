@@ -9,7 +9,6 @@ import {
   RefreshOutlined,
   RestaurantOutlined,
   TableRestaurantOutlined,
-  TrendingUpOutlined,
   WarningAmberOutlined,
 } from "@mui/icons-material";
 import {
@@ -125,8 +124,7 @@ function getStatusColor(
   | "success"
   | "error"
   | "default" {
-  const name =
-    getStatusName(status).toLowerCase();
+  const name = getStatusName(status).toLowerCase();
 
   switch (name) {
     case "pending":
@@ -365,7 +363,7 @@ export default function DashboardPage() {
         <Box>
           <Typography
             variant="h4"
-            fontWeight={800}
+            sx={{ fontWeight: 800 }}
           >
             Good morning,{" "}
             {user?.fullName?.split(" ")[0] ||
@@ -445,8 +443,8 @@ export default function DashboardPage() {
         >
           <Stack
             direction="row"
-            alignItems="center"
             spacing={2}
+            sx={{ alignItems: "center" }}
           >
             <Box
               sx={{
@@ -464,7 +462,9 @@ export default function DashboardPage() {
             </Box>
 
             <Box sx={{ flex: 1 }}>
-              <Typography fontWeight={800}>
+              <Typography
+                sx={{ fontWeight: 800 }}
+              >
                 {restaurant.name}
               </Typography>
 
@@ -570,7 +570,7 @@ export default function DashboardPage() {
               <Box>
                 <Typography
                   variant="h6"
-                  fontWeight={800}
+                  sx={{ fontWeight: 800 }}
                 >
                   Recent Orders
                 </Typography>
@@ -642,15 +642,19 @@ export default function DashboardPage() {
                         }}
                       >
                         <Typography
-                          fontWeight={800}
-                          fontSize={13}
+                          sx={{
+                            fontWeight: 800,
+                            fontSize: 13,
+                          }}
                         >
                           #{order.id}
                         </Typography>
                       </Box>
 
                       <Box sx={{ flex: 1 }}>
-                        <Typography fontWeight={700}>
+                        <Typography
+                          sx={{ fontWeight: 700 }}
+                        >
                           Table{" "}
                           {order.tableNumber}
                         </Typography>
@@ -683,11 +687,10 @@ export default function DashboardPage() {
                       />
 
                       <Typography
-                        fontWeight={800}
                         sx={{
                           minWidth: 100,
-                          textAlign:
-                            "right",
+                          textAlign: "right",
+                          fontWeight: 800,
                         }}
                       >
                         {formatCurrency(
@@ -730,7 +733,7 @@ export default function DashboardPage() {
               <Box>
                 <Typography
                   variant="h6"
-                  fontWeight={800}
+                  sx={{ fontWeight: 800 }}
                 >
                   Branches
                 </Typography>
@@ -804,8 +807,10 @@ export default function DashboardPage() {
                             sx={{ flex: 1 }}
                           >
                             <Typography
-                              fontWeight={700}
                               noWrap
+                              sx={{
+                                fontWeight: 700,
+                              }}
                             >
                               {branch.name}
                             </Typography>
@@ -868,7 +873,7 @@ export default function DashboardPage() {
           >
             <Typography
               variant="h6"
-              fontWeight={800}
+              sx={{ fontWeight: 800 }}
             >
               Order Status
             </Typography>
@@ -923,7 +928,7 @@ export default function DashboardPage() {
           >
             <Typography
               variant="h6"
-              fontWeight={800}
+              sx={{ fontWeight: 800 }}
             >
               Quick Actions
             </Typography>
@@ -1067,7 +1072,7 @@ function StatCard({
           <Typography
             variant="body2"
             color="text.secondary"
-            fontWeight={600}
+            sx={{ fontWeight: 600 }}
           >
             {title}
           </Typography>
@@ -1093,8 +1098,10 @@ function StatCard({
 
         <Typography
           variant="h5"
-          fontWeight={800}
-          sx={{ mt: 2 }}
+          sx={{
+            mt: 2,
+            fontWeight: 800,
+          }}
         >
           {value}
         </Typography>
@@ -1146,7 +1153,7 @@ function StatusRow({
       >
         <Typography
           variant="body2"
-          fontWeight={600}
+          sx={{ fontWeight: 600 }}
         >
           {label}
         </Typography>
@@ -1219,7 +1226,7 @@ function QuickAction({
       <Box>
         <Typography
           variant="body2"
-          fontWeight={700}
+          sx={{ fontWeight: 700 }}
         >
           {title}
         </Typography>
@@ -1269,7 +1276,9 @@ function EmptyState({
         {icon}
       </Box>
 
-      <Typography fontWeight={700}>
+      <Typography
+        sx={{ fontWeight: 700 }}
+      >
         {title}
       </Typography>
 

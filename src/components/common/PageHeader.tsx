@@ -27,7 +27,7 @@ export default function PageHeader({
       <Box>
         <Typography
           variant="h4"
-          fontWeight={800}
+          sx={{ fontWeight: 800 }}
         >
           {title}
         </Typography>

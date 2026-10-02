@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
   Alert,
   Box,
@@ -10,6 +11,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+
 import { authService } from "../../../services/authService";
 
 export default function LoginPage() {
@@ -102,7 +104,10 @@ export default function LoginPage() {
               M
             </Box>
 
-            <Typography variant="h4" fontWeight={800}>
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 800 }}
+            >
               MenuOrdering
             </Typography>
 
@@ -124,13 +129,18 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit}>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+          >
             <TextField
               fullWidth
               label="Email"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) =>
+                setEmail(event.target.value)
+              }
               disabled={loading}
               autoComplete="email"
               autoFocus
@@ -142,7 +152,9 @@ export default function LoginPage() {
               label="Password"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) =>
+                setPassword(event.target.value)
+              }
               disabled={loading}
               autoComplete="current-password"
               sx={{ mb: 3 }}

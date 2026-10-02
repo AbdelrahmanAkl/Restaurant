@@ -3,6 +3,7 @@ import {
   LogoutOutlined,
   NotificationsNoneOutlined,
 } from "@mui/icons-material";
+
 import {
   AppBar,
   Avatar,
@@ -13,6 +14,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
+
 import { useState } from "react";
 import { authService } from "../../services/authService";
 
@@ -50,7 +52,7 @@ export default function Topbar() {
 
           <Typography
             variant="body1"
-            fontWeight={700}
+            sx={{ fontWeight: 700 }}
           >
             Overview
           </Typography>

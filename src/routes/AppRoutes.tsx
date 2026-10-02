@@ -9,6 +9,7 @@ import LoginPage from "../features/auth/pages/LoginPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import AdminLayout from "../components/layout/AdminLayout";
 import ProtectedRoute from "./ProtectedRoute";
+import TablesPage from "../features/tables/pages/TablesPage";
 
 export default function AppRoutes() {
   return (
@@ -48,7 +49,7 @@ export default function AppRoutes() {
 
             <Route
               path="/tables"
-              element={<div>Tables & QR</div>}
+              element={<TablesPage />}
             />
 
             <Route

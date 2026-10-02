@@ -10,6 +10,7 @@ import {
   SettingsOutlined,
   StorefrontOutlined,
 } from "@mui/icons-material";
+
 import {
   Box,
   Divider,
@@ -19,6 +20,7 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
+
 import { NavLink } from "react-router-dom";
 
 const workspaceItems = [
@@ -230,8 +232,10 @@ export default function Sidebar() {
 
         <Box>
           <Typography
-            fontWeight={800}
-            lineHeight={1.1}
+            sx={{
+              fontWeight: 800,
+              lineHeight: 1.1,
+            }}
           >
             MenuOrdering
           </Typography>
