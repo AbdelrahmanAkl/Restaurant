@@ -7,16 +7,6 @@ export type UserRole =
   | "Kitchen"
   | "Cashier";
 
-export const USER_ROLE_VALUES: Record<UserRole, number> = {
-  SuperAdmin: 1,
-  Admin: 2,
-  RestaurantManager: 3,
-  BranchManager: 4,
-  Waiter: 5,
-  Kitchen: 6,
-  Cashier: 7,
-};
-
 export interface User {
   id: number;
   fullName: string;
@@ -34,7 +24,7 @@ export interface CreateUserRequest {
   fullName: string;
   email: string;
   password: string;
-  role: number;
+  role: UserRole;
   restaurantId?: number | null;
   branchId?: number | null;
   isActive: boolean;
@@ -43,7 +33,7 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   fullName: string;
   email: string;
-  role: number;
+  role: UserRole;
   restaurantId?: number | null;
   branchId?: number | null;
   isActive: boolean;

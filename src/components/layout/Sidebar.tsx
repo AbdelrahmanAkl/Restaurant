@@ -54,6 +54,7 @@ const operationItems = [
     label: "Menu",
     path: "/menu",
     icon: <LocalDiningOutlined />,
+    permission: "menu",
   },
   {
     label: "Tables & QR",
@@ -89,7 +90,7 @@ interface MenuItem {
   label: string;
   path: string;
   icon: React.ReactNode;
-  permission?: string;
+  permission?: "users" | "menu";
 }
 
 function MenuSection({
@@ -163,10 +164,8 @@ function MenuSection({
                 top: 8,
                 bottom: 8,
                 width: 3,
-                borderRadius:
-                  "0 4px 4px 0",
-                backgroundColor:
-                  "primary.main",
+                borderRadius: "0 4px 4px 0",
+                backgroundColor: "primary.main",
               },
 
               "&:hover": {
@@ -179,13 +178,8 @@ function MenuSection({
               },
             }}
           >
-            <ListItemIcon>
-              {item.icon}
-            </ListItemIcon>
-
-            <ListItemText
-              primary={item.label}
-            />
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} />
           </ListItemButton>
         ))}
       </List>
@@ -202,14 +196,26 @@ export default function Sidebar() {
     user?.role === "RestaurantManager" ||
     user?.role === "BranchManager";
 
-  const visibleWorkspaceItems =
-    workspaceItems.filter((item) => {
-      if (item.permission === "users") {
-        return canAccessUsers;
-      }
+  const canAccessMenu =
+    user?.role === "SuperAdmin" ||
+    user?.role === "Admin" ||
+    user?.role === "RestaurantManager";
 
-      return true;
-    });
+  const visibleWorkspaceItems = workspaceItems.filter((item) => {
+    if (item.permission === "users") {
+      return canAccessUsers;
+    }
+
+    return true;
+  });
+
+  const visibleOperationItems = operationItems.filter((item) => {
+    if (item.permission === "menu") {
+      return canAccessMenu;
+    }
+
+    return true;
+  });
 
   return (
     <Box
@@ -229,7 +235,6 @@ export default function Sidebar() {
         zIndex: 1200,
       }}
     >
-      {/* Brand */}
       <Box
         sx={{
           height: 72,
@@ -256,19 +261,10 @@ export default function Sidebar() {
         </Box>
 
         <Box>
-          <Typography
-            sx={{
-              fontWeight: 800,
-              lineHeight: 1.1,
-            }}
-          >
+          <Typography sx={{ fontWeight: 800, lineHeight: 1.1 }}>
             MenuOrdering
           </Typography>
-
-          <Typography
-            variant="caption"
-            color="text.secondary"
-          >
+          <Typography variant="caption" color="text.secondary">
             Restaurant Admin
           </Typography>
         </Box>
@@ -276,7 +272,6 @@ export default function Sidebar() {
 
       <Divider />
 
-      {/* Navigation */}
       <Box
         sx={{
           flex: 1,
@@ -284,20 +279,9 @@ export default function Sidebar() {
           py: 1,
         }}
       >
-        <MenuSection
-          title="Workspace"
-          items={visibleWorkspaceItems}
-        />
-
-        <MenuSection
-          title="Operations"
-          items={operationItems}
-        />
-
-        <MenuSection
-          title="Insights"
-          items={insightItems}
-        />
+        <MenuSection title="Workspace" items={visibleWorkspaceItems} />
+        <MenuSection title="Operations" items={visibleOperationItems} />
+        <MenuSection title="Insights" items={insightItems} />
       </Box>
     </Box>
   );
